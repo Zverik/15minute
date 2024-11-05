@@ -1,0 +1,8 @@
+*.swp
+__pycache__/
+.venv/
+old/
+*.json
+*.geojson
+*.csv
+*.pbf
