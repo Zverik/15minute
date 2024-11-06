@@ -4,9 +4,10 @@ relation_id = 351671 # Nõmme
 # way_id = 45453752
 # bbox = [8.373212, 47.31758, 8.388319, 47.328053]
 
-building_buffer = 50 # meters
-simplify = 0.0001 # degrees
 poi_area_buffer = 1000 # meters
+building_buffer = 50 # meters
+building_min_hole_area = 5000 # m²
+simplify = 10 # meters
 
 [layers]
 # Lists of tags (as k=v) for each layer
@@ -15,6 +16,8 @@ health = ['amenity=clinic', 'amenity=hospital', 'amenity=doctors', 'amenity=phar
 cafe = ['amenity=cafe', 'amenity=fast_food', 'amenity=restaurant', 'amenity=bar', 'amenity=pub']
 community = ['amenity=library', 'amenity=social_centre', 'amenity=community_centre']
 school = ['amenity=school', 'amenity=university', 'amenity=college']
+culture = ['amenity=theatre', 'amenity=cinema', 'amenity=event_venue']
+# transport = ['highway=bus_stop', 'railway=halt', 'railway=station']
 
 [isochrones]
 graphhopper = 'http://localhost:8989/isochrone'
