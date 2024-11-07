@@ -5,6 +5,10 @@ city calculation. Should be pretty simple, no installation required.
 
 ## Preparing the data
 
+Open the terminal in the `prepare` directory.
+
+### Aquiring the data
+
 First, download an `.osm.pbf` file for your country from [Geofabrik](https://download.geofabrik.de/).
 This all will work faster if you trim it with [Osmium Tool](https://osmcode.org/):
 open [the bounding box tool](https://boundingbox.klokantech.com/), choose an area, copy the CSV code,
@@ -17,6 +21,8 @@ inside. Scroll the results down and find the area object you need: a city, or a 
 and copy the identifier into `relation_id` or `way_id` in `config.toml`.
 
 Adjust other settings in the configuration file if you need.
+
+### First run
 
 Then install Python dependencies:
 
@@ -35,8 +41,35 @@ To filter buildings, I use [QGIS](https://qgis.org). Add an XYZ Tiles OpenStreet
 then add a vector layer from `buildings.json`, turn on the editing mode and use the freehand
 selection tool. Having finished, save the layer.
 
+### Second run
+
 Now, on to isochrone calculation. For that you would need Java and GraphHopper. Install the
 former, and download [the latest jar](https://github.com/graphhopper/graphhopper/releases)
 file for the latter.
 
-TODO: profiles for graphhopper
+The configuration for GraphHopper is in the `graphhopper.yaml`. Look for
+the `datareader.file` line at the top: change the value to your pbf file name.
+Everything else can stay the same. If GH gives an error on start-up,
+it usually tells you what to fix.
+
+Run the router using the appropriate jar file name:
+
+    java -jar graphhopper-web-10.0.jar server graphhopper.yaml
+
+And then build the isochrones:
+
+    ./15minute.py -a area.json -p poi.json -b buildings.json -O 15minute.json
+
+When everything is over, you will get a `15minute.json` file with all the data required
+for visualization. Alternatively, you can use `-o` key for producing isochrone polygons
+as a GeoJSON, and `-B` for producing a multipolygon with all the buildings in one,
+buffered and simplified. Try those to see what the script outputs.
+
+## Publishing the visualization
+
+_TODO_
+
+## Author and License
+
+Written by Ilya Zverev, published under the ISC license. Feel free to do anything,
+and I'll be happy to hear that you used the tool.
