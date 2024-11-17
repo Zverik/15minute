@@ -300,12 +300,13 @@ def scan_buildings_and_poi(area: Area, bap: BuildingsAndPOI, osmfile: str):
 
     poi_buffer = config['openstreetmap'].get('poi_area_buffer', 0)
     poi_area = area.buffered(poi_buffer)
+    need_buildings = not bap.buildings
 
     for obj in osmium.FileProcessor(osmfile)\
             .with_areas()\
             .with_filter(osmium.filter.GeoInterfaceFilter(True)):
         if obj.is_node() or obj.is_area():
-            if 'building' in obj.tags:
+            if need_buildings and 'building' in obj.tags:
                 shp = shape(obj.__geo_interface__['geometry'])
                 if area.intersects(shp):
                     if obj.is_node():

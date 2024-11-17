@@ -83,6 +83,15 @@ To check how it looks, run `python -m http.server` in the directory with the fil
 and open the URL it shows when started. To publish, just deploy the two files (html
 and json) somewhere, e.g. on GitHub Pages.
 
+### What do things mean
+
+On the interactive map:
+
+* Choose layers and profiles in the top left box.
+* Red polygons mark buildings that are outside of a 15-minute area.
+* Toggle isochrones in the box, so they replace buildings and are drawn as light blue polygons.
+* Yellow dots are points of interest for the layer. Hover the mouse cursor to see their names.
+
 ## Author and License
 
 Written by Ilya Zverev, published under the ISC license. Feel free to do anything,
