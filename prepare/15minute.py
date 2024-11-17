@@ -34,6 +34,7 @@ class Transformer3857:
 class Area:
     def __init__(self, area: shapely.Geometry | None = None):
         self._transformer = Transformer3857()
+        self._shape: shapely.Geometry | None = None
         if area:
             self.set_shape(area)
 

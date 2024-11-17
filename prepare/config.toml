@@ -1,5 +1,6 @@
 [openstreetmap]
 relation_id = 351671 # Nõmme
+#relation_id = 2164745 # Tallinn
 # Alternatives:
 # way_id = 45453752
 # bbox = [8.373212, 47.31758, 8.388319, 47.328053]
@@ -11,7 +12,7 @@ simplify = 10 # meters
 
 [layers]
 # Lists of tags (as k=v) for each layer
-shops = ['shop=convenience', 'shop=supermarket']
+shops = ['shop=convenience', 'shop=supermarket', 'shop=variety_store', 'shop=general']
 health = ['amenity=clinic', 'amenity=hospital', 'amenity=doctors', 'amenity=pharmacy']
 cafe = ['amenity=cafe', 'amenity=fast_food', 'amenity=restaurant', 'amenity=bar', 'amenity=pub']
 community = ['amenity=library', 'amenity=social_centre', 'amenity=community_centre']
