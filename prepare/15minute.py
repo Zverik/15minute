@@ -4,6 +4,7 @@ import json
 import math
 import os
 import osmium
+import sys
 import pyproj
 import requests
 import shapely
@@ -249,7 +250,10 @@ def isochrone(point: tuple[float, float], profile: str,
         'point': f'{point[1]},{point[0]}',
     })
     if resp.status_code != 200:
-        raise Exception(f'Failed to query {resp.url}: {resp.text}')
+        # raise Exception(f'Failed to query {resp.url}: {resp.text}')
+        sys.stderr.write(f'Failed to query {resp.url}: {resp.status_code} '
+                         f'{resp.text}\n')
+        return shapely.Polygon()
     data = resp.json()
     return shape(data['polygons'][0]['geometry'])
 

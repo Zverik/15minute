@@ -13,13 +13,24 @@
         html, body, #map { height: 100%; }
         #settings {
           display: inline-block;
-          position: relative;
+          position: absolute;
           top: 10px;
           left: 10px;
           padding: 5px 10px;
           background-color: white;
           color: black;
           z-index: 999;
+        }
+        #error {
+          display: inline-block;
+          position: absolute;
+          top: 140px;
+          left: 10px;
+          padding: 5px 10px;
+          background-color: darkred;
+          color: white;
+          z-index: 999;
+          visibility: hidden;
         }
         .s-title {
           font-weight: bold;
@@ -38,12 +49,14 @@
         }
         .s-button.chosen {
           background: darkgreen;
+          color: white;
         }
     </style>
   </head>
   <body>
     <div id="map">
-      <div id="settings">Test</div>
+      <div id="settings"></div>
+      <div id="error"></div>
     </div>
     <script>
       const map = new maplibregl.Map({
@@ -213,6 +226,8 @@
       }
 
       function updateData() {
+        $('#error').css('visibility', 'hidden');
+
         // Show all points of interest.
         const poi = {
           type: 'FeatureCollection',
@@ -232,22 +247,32 @@
         }
         map.getSource('poi').setData(poi);
 
-        // TODO: bike + everything gives error: "this.rings is null".
-        const fullIso = iso.features.length > 1 ? turf.intersect(iso) : iso;
-        map.getSource('isochrones').setData(fullIso);
-
-        // Now buildings.
         const emptyFC = {'type': 'FeatureCollection', 'features': []};
-        const isoFeatures = fullIso.features ? fullIso.features : [fullIso];
-        if (!isoFeatures) {
-          map.getSource('buildings').setData(fullIso);
-        } else {
-          const isoAndBuildings = {
-            type: 'FeatureCollection',
-            features: [buildings, ...isoFeatures],
-          };
-          const buildingsExcl = turf.difference(isoAndBuildings);
-          map.getSource('buildings').setData(buildingsExcl || emptyFC);
+        let isoOk = false;
+        try {
+          // TODO: bike + everything gives error: "this.rings is null".
+          const fullIso = iso.features.length > 1 ? turf.intersect(iso) : iso;
+          map.getSource('isochrones').setData(fullIso);
+          isoOk = true;
+
+          // Now buildings.
+          const isoFeatures = fullIso.features ? fullIso.features : [fullIso];
+          if (!isoFeatures) {
+            map.getSource('buildings').setData(fullIso);
+          } else {
+            const isoAndBuildings = {
+              type: 'FeatureCollection',
+              features: [buildings, ...isoFeatures],
+            };
+            const buildingsExcl = turf.difference(isoAndBuildings);
+            map.getSource('buildings').setData(buildingsExcl || emptyFC);
+          }
+        } catch (e) {
+          console.trace(e);
+          if (!isoOk) map.getSource('isochrones').setData(emptyFC);
+          map.getSource('buildings').setData(emptyFC);
+          $('#error').text(e);
+          $('#error').css('visibility', 'visible');
         }
       }
 
