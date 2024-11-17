@@ -25,3 +25,4 @@ graphhopper = 'http://localhost:8989/isochrone'
 # Name = [ profile name, distance in minutes]
 bike = ['bike', 10]
 foot = ['foot', 15]
+foot10 = ['foot', 10]

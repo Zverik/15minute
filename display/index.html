@@ -3,7 +3,305 @@
   <head>
     <meta charset="utf-8">
     <title>15-minute city</title>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@^4.7.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@^4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        html, body, #map { height: 100%; }
+        #settings {
+          display: inline-block;
+          position: relative;
+          top: 10px;
+          left: 10px;
+          padding: 5px 10px;
+          background-color: white;
+          color: black;
+          z-index: 999;
+        }
+        .s-title {
+          font-weight: bold;
+          margin-right: 4px;
+        }
+        .s-button {
+          display: inline-block;
+          font-weight: normal;
+          padding: 2px 4px;
+          margin: 2px 2px;
+          background: #ddd;
+          cursor: pointer;
+        }
+        .s-button:hover {
+          background: white;
+        }
+        .s-button.chosen {
+          background: darkgreen;
+        }
+    </style>
   </head>
   <body>
+    <div id="map">
+      <div id="settings">Test</div>
+    </div>
+    <script>
+      const map = new maplibregl.Map({
+        style: 'https://tiles.openfreemap.org/styles/positron',
+        // Change initial locaion [longitude, latitude] and zoom here.
+        center: [24.73, 59.42],
+        zoom: 11.5,
+        container: 'map',
+        attributionControl: { compact: false },
+        hash: true,
+        minZoom: 10,
+        maxZoom: 15,
+        dragRotate: false,
+        pitchWithRotate: false,
+      });
+
+      // Change file name here, can be remote if CORS works.
+      map.on('load', () => {
+        fetch('./nomme15.json')
+          .then((response) => response.json())
+          .then((json) => loadData(json));
+      });
+
+      var currentLayers = new Set();
+      var currentProfile = null;
+      var multipleLayers = false;
+      var showIsochrones = false;
+      var buildings = null;
+      var layers = {};
+
+      var popup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+      });
+
+      function initSources() {
+        const emptyGeoJson = {
+          'type': 'geojson',
+          'data': {
+            'type': 'FeatureCollection',
+            'features': [],
+          }
+        };
+
+        map.addSource('area', emptyGeoJson);
+        map.addLayer({
+          id: 'area-bounds',
+          'source': 'area',
+          type: 'line',
+          paint: {
+            'line-color': 'purple',
+            'line-width': 3,
+            'line-dasharray': [3, 1],
+          },
+        });
+
+        map.addSource('poi', emptyGeoJson);
+        map.addLayer({
+          id: 'poi-15',
+          source: 'poi',
+          type: 'circle',
+          paint: {
+            'circle-radius': 3,
+            'circle-color': 'yellow',
+            'circle-stroke-width': 1,
+            'circle-stroke-color': 'black',
+          },
+        });
+
+        map.addSource('isochrones', emptyGeoJson);
+        map.addLayer({
+          id: 'isochrones-15',
+          source: 'isochrones',
+          type: 'fill',
+          layout: {
+            'visibility': 'none',
+          },
+          paint: {
+            'fill-color': 'rgba(49,130,189,0.1)',
+            'fill-outline-color': 'darkcyan',
+          },
+        });
+
+        map.addSource('buildings', emptyGeoJson);
+        map.addLayer({
+          id: 'buildings-15',
+          source: 'buildings',
+          type: 'fill',
+          layout: {
+            'visibility': 'visible',
+          },
+          paint: {
+            'fill-color': 'rgba(240,59,32, 0.7)',
+            'fill-outline-color': 'black',
+          },
+        });
+
+        map.on('mouseenter', 'poi-15', (e) => {
+          map.getCanvas().style.cursor = 'pointer';
+
+          const coordinates = e.features[0].geometry.coordinates.slice();
+          const description = e.features[0].properties.name || '(no name)';
+
+          popup.setLngLat(coordinates).setHTML(description).addTo(map);
+        });
+        map.on('mouseleave', 'poi-15', () => {
+          map.getCanvas().style.cursor = '';
+          popup.remove();
+        });
+      }
+
+      function loadData(data) {
+        initSources();
+
+        // data.area: general area for which the data was acquired.
+        // data.buildings: all buildings buffered and merged into one multipolygon.
+        // data.layers: map of layer_name =>
+        //   .poi: list of point features with "name" and "type" properties.
+        //   .isochrones: list of merged isochrones multipoly features with "profile" props.
+        buildings = {
+          type: 'Feature',
+          geometry: data.buildings,
+          properties: {},
+        };
+        layers = data.layers;
+
+        // Build the settings panel.
+        let settings = $('<div id="settings">');
+        settings.append('<span class="s-title">Layers:</span>');
+        for (const layer in data.layers) {
+          if (!currentLayers.size) currentLayers.add(layer);
+          const l = $('<span class="s-button s-layer">' + layer + '</span>');
+          l.attr('layer', layer);
+          l.on('click', (e) => { setLayer(layer); });
+          settings.append(l);
+        }
+
+        settings.append('<br><span class="s-title">Profile:</span>');
+        for (const profile of data.profiles) {
+          const p = $('<span class="s-button s-profile">' + profile + '</span>');
+          p.attr('profile', profile);
+          p.on('click', (e) => { setProfile(profile); });
+          settings.append(p);
+        }
+
+        const multi = $('<span class="s-button multi">Multiple layers</span>');
+        multi.on('click', () => { toggleMulti(); });
+        settings.append('<br>');
+        settings.append(multi);
+
+        const isochrones = $('<span class="s-button isochrones">Isochrones</span>');
+        isochrones.on('click', () => { toggleIsochrones(); });
+        settings.append(isochrones);
+
+        $('#settings').replaceWith(settings);
+
+        // Add the region area.
+        map.getSource('area').setData(data.area);
+
+        // Update the layer and the profile.
+        setProfile(data.profiles.includes('foot') ? 'foot' : data.profiles[0], true);
+        setLayer(currentLayers.values().next().value);
+      }
+
+      function updateData() {
+        // Show all points of interest.
+        const poi = {
+          type: 'FeatureCollection',
+          features: [],
+        };
+        const iso = {
+          type: 'FeatureCollection',
+          features: [],
+        };
+        for (const layer of currentLayers) {
+          const layerData = layers[layer];
+          if (currentLayers.size == 1) {
+            poi.features = poi.features.concat(layerData.poi);
+          }
+          const dataIso = layerData.isochrones[currentProfile];
+          if (dataIso) iso.features.push(dataIso);
+        }
+        map.getSource('poi').setData(poi);
+
+        // TODO: bike + everything gives error: "this.rings is null".
+        const fullIso = iso.features.length > 1 ? turf.intersect(iso) : iso;
+        map.getSource('isochrones').setData(fullIso);
+
+        // Now buildings.
+        const emptyFC = {'type': 'FeatureCollection', 'features': []};
+        const isoFeatures = fullIso.features ? fullIso.features : [fullIso];
+        if (!isoFeatures) {
+          map.getSource('buildings').setData(fullIso);
+        } else {
+          const isoAndBuildings = {
+            type: 'FeatureCollection',
+            features: [buildings, ...isoFeatures],
+          };
+          const buildingsExcl = turf.difference(isoAndBuildings);
+          map.getSource('buildings').setData(buildingsExcl || emptyFC);
+        }
+      }
+
+      function setLayer(layer, noUpdate) {
+        if (!multipleLayers) {
+          currentLayers.clear();
+          currentLayers.add(layer);
+        } else {
+          if (currentLayers.has(layer)) {
+            if (currentLayers.size == 1) return;
+            currentLayers.delete(layer);
+          } else {
+            currentLayers.add(layer);
+          }
+        }
+        if (!noUpdate) updateData();
+
+        $('#settings .s-layer').each(function () {
+          const thisLayer = $(this).attr('layer');
+          if (currentLayers.has(thisLayer))
+            $(this).addClass('chosen');
+          else
+            $(this).removeClass('chosen');
+        });
+      }
+
+      function setProfile(profile, noUpdate) {
+        currentProfile = profile;
+        if (!noUpdate) updateData();
+
+        $('#settings .s-profile').each(function () {
+          const thisProfile = $(this).attr('profile');
+          if (thisProfile == profile)
+            $(this).addClass('chosen');
+          else
+            $(this).removeClass('chosen');
+        });
+      }
+
+      function toggleMulti() {
+        multipleLayers = !multipleLayers;
+        if (!multipleLayers && currentLayers.size > 1) {
+          setLayer(currentLayers.values().next().value);
+        }
+        if (multipleLayers)
+          $('#settings .multi').addClass('chosen');
+        else
+          $('#settings .multi').removeClass('chosen');
+      }
+
+      function toggleIsochrones() {
+        showIsochrones = !showIsochrones;
+        map.setLayoutProperty('isochrones-15', 'visibility', showIsochrones ? 'visible' : 'none');
+        map.setLayoutProperty('buildings-15', 'visibility', !showIsochrones ? 'visible' : 'none');
+        if (showIsochrones)
+          $('#settings .isochrones').addClass('chosen');
+        else
+          $('#settings .isochrones').removeClass('chosen');
+      }
+    </script>
   </body>
 </html>

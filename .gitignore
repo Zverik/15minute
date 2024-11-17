@@ -6,3 +6,4 @@ old/
 *.geojson
 *.csv
 *.pbf
+.eslint*

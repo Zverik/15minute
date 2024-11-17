@@ -379,12 +379,14 @@ if __name__ == '__main__':
     if options.all_buildings and bap.buildings:
         json.dump(mapping(bap.all_buildings), options.all_buildings)
 
+    profiles: list[str] = []
     iso_features: list[dict] = []
     if options.output or options.coverage or options.package:
         # Build isochrones for each layer.
-        na_buildgins: list[dict] = []
+        na_buildings: list[dict] = []
         for k, v in config['isochrones'].items():
             if isinstance(v, list) and len(v) == 2 and isinstance(v[0], str):
+                profiles.append(k)
                 for layer, coords in bap.poi.items():
                     iso = isochrones([p.coords for p in coords], v[0], v[1])
                     if options.output or options.package:
@@ -401,7 +403,7 @@ if __name__ == '__main__':
                     if options.coverage:
                         no_buildings = shapely.difference(
                             bap.all_buildings, iso)
-                        na_buildgins.append({
+                        na_buildings.append({
                             'type': 'Feature',
                             'geometry': mapping(no_buildings),
                             'properties': {
@@ -420,7 +422,7 @@ if __name__ == '__main__':
         if options.coverage:
             json.dump({
                 'type': 'FeatureCollection',
-                'features': iso_features,
+                'features': na_buildings,
             }, options.output)
 
     if options.package:
@@ -431,10 +433,12 @@ if __name__ == '__main__':
             if isolines:
                 layers[layer] = {
                     'poi': [p.to_feature() for p in pois],
-                    'isolines': isolines,
+                    'isochrones': {p['properties']['profile']: p
+                                   for p in isolines},
                 }
         json.dump({
             'area': mapping(area.shape),
             'buildings': mapping(bap.all_buildings),
             'layers': layers,
+            'profiles': profiles,
         }, options.package)
