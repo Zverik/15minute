@@ -17,7 +17,8 @@ health = ['amenity=clinic', 'amenity=hospital', 'amenity=doctors', 'amenity=phar
 cafe = ['amenity=cafe', 'amenity=fast_food', 'amenity=restaurant', 'amenity=bar', 'amenity=pub']
 community = ['amenity=library', 'amenity=social_centre', 'amenity=community_centre']
 school = ['amenity=school', 'amenity=university', 'amenity=college']
-culture = ['amenity=theatre', 'amenity=cinema', 'amenity=event_venue']
+childcare = ['amenity=kindergarten', 'amenity=childcare']
+culture = ['amenity=theatre', 'amenity=cinema', 'amenity=event_venue', 'tourism=museum', 'tourism=zoo', 'tourism=theme_park']
 # transport = ['highway=bus_stop', 'railway=halt', 'railway=station']
 
 [isochrones]
