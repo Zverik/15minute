@@ -3,6 +3,8 @@
 This is a script and a visualization page for presenting a 15-minute
 city calculation. Should be pretty simple, no installation required.
 
+For an example of an output, see [github.io](https://zverik.github.io/15minute/).
+
 ## Preparing the data
 
 Open the terminal in the `prepare` directory.
@@ -67,7 +69,19 @@ buffered and simplified. Try those to see what the script outputs.
 
 ## Publishing the visualization
 
-_TODO_
+It's simple. Get the json file you've built in the last step and put it next to the
+`display/index.html`. Then open the html file and replace `nomme15.json` with the
+name of your file.
+
+Optionally you can also tweak the initial `center` and `zoom` of the map, and initial
+values of layers and profile:
+
+    var currentLayers = new Set(['shops']);
+    var currentProfile = 'bike';
+
+To check how it looks, run `python -m http.server` in the directory with the files,
+and open the URL it shows when started. To publish, just deploy the two files (html
+and json) somewhere, e.g. on GitHub Pages.
 
 ## Author and License
 

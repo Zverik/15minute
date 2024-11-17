@@ -68,6 +68,7 @@
 
       var currentLayers = new Set();
       var currentProfile = null;
+
       var multipleLayers = false;
       var showIsochrones = false;
       var buildings = null;
@@ -187,6 +188,9 @@
           p.on('click', (e) => { setProfile(profile); });
           settings.append(p);
         }
+        if (!currentProfile || !data.profiles.includes(currentProfile)) {
+          currentProfile = data.profiles.includes('foot') ? 'foot' : data.profiles[0];
+        }
 
         const multi = $('<span class="s-button multi">Multiple layers</span>');
         multi.on('click', () => { toggleMulti(); });
@@ -203,8 +207,8 @@
         map.getSource('area').setData(data.area);
 
         // Update the layer and the profile.
-        setProfile(data.profiles.includes('foot') ? 'foot' : data.profiles[0], true);
-        setLayer(currentLayers.values().next().value);
+        setLayer(currentLayers.values().next().value, true);
+        setProfile(currentProfile);
       }
 
       function updateData() {
