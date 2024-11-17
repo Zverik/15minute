@@ -3,6 +3,8 @@
 This is a script and a visualization page for presenting a 15-minute
 city calculation. Should be pretty simple, no installation required.
 
+See [github.io](https://zverik.github.io/15minute/) for an example.
+
 ## Preparing the data
 
 Open the terminal in the `prepare` directory.
