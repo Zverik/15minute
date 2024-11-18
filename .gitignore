@@ -7,3 +7,4 @@ prepare/*.json
 *.csv
 *.pbf
 .eslint*
+display/

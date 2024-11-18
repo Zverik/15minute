@@ -13,13 +13,24 @@
         html, body, #map { height: 100%; }
         #settings {
           display: inline-block;
-          position: relative;
+          position: absolute;
           top: 10px;
           left: 10px;
           padding: 5px 10px;
           background-color: white;
           color: black;
           z-index: 999;
+        }
+        #error {
+          display: inline-block;
+          position: absolute;
+          top: 140px;
+          left: 10px;
+          padding: 5px 10px;
+          background-color: darkred;
+          color: white;
+          z-index: 999;
+          visibility: hidden;
         }
         .s-title {
           font-weight: bold;
@@ -38,37 +49,47 @@
         }
         .s-button.chosen {
           background: darkgreen;
+          color: white;
         }
     </style>
   </head>
   <body>
     <div id="map">
-      <div id="settings">Test</div>
+      <div id="settings"></div>
+      <div id="error"></div>
     </div>
     <script>
+      var loadFile = 'nomme15'; // file name without .json
+      var currentLayers = new Set([]);
+      var currentProfile = 'foot';
+
       const map = new maplibregl.Map({
-        style: 'https://tiles.openfreemap.org/styles/positron',
         // Change initial locaion [longitude, latitude] and zoom here.
         center: [24.689, 59.375],
-        zoom: 12.5,
+        zoom: 12,
+        minZoom: 10,
+        maxZoom: 15,
+
+        style: 'https://tiles.openfreemap.org/styles/positron',
         container: 'map',
         attributionControl: { compact: false },
         hash: true,
-        minZoom: 11,
-        maxZoom: 15,
         dragRotate: false,
         pitchWithRotate: false,
       });
 
-      // Change file name here, can be remote if CORS works.
+      // No need to look below this line unless you're a developer.
+
+      if (window.location.search) {
+        const newFile = window.location.search.substring(1);
+        if (/^[a-zA-Z0-9/_-]+$/.test(newFile)) loadFile = newFile;
+      }
       map.on('load', () => {
-        fetch('./nomme15.json')
+        fetch('./' + loadFile + '.json')
           .then((response) => response.json())
           .then((json) => loadData(json));
       });
 
-      var currentLayers = new Set();
-      var currentProfile = null;
       var multipleLayers = false;
       var showIsochrones = false;
       var buildings = null;
@@ -173,6 +194,9 @@
         // Build the settings panel.
         let settings = $('<div id="settings">');
         settings.append('<span class="s-title">Layers:</span>');
+        if (currentLayers.size > 0 && !(currentLayers.values().next().value in data.layers)) {
+          currentLayers = new Set();
+        }
         for (const layer in data.layers) {
           if (!currentLayers.size) currentLayers.add(layer);
           const l = $('<span class="s-button s-layer">' + layer + '</span>');
@@ -187,6 +211,9 @@
           p.attr('profile', profile);
           p.on('click', (e) => { setProfile(profile); });
           settings.append(p);
+        }
+        if (!currentProfile || !data.profiles.includes(currentProfile)) {
+          currentProfile = data.profiles.includes('foot') ? 'foot' : data.profiles[0];
         }
 
         const multi = $('<span class="s-button multi">Multiple layers</span>');
@@ -204,11 +231,13 @@
         map.getSource('area').setData(data.area);
 
         // Update the layer and the profile.
-        setProfile(data.profiles.includes('foot') ? 'foot' : data.profiles[0], true);
-        setLayer(currentLayers.values().next().value);
+        setLayer(currentLayers.values().next().value, true);
+        setProfile(currentProfile);
       }
 
       function updateData() {
+        $('#error').css('visibility', 'hidden');
+
         // Show all points of interest.
         const poi = {
           type: 'FeatureCollection',
@@ -228,22 +257,32 @@
         }
         map.getSource('poi').setData(poi);
 
-        // TODO: bike + everything gives error: "this.rings is null".
-        const fullIso = iso.features.length > 1 ? turf.intersect(iso) : iso;
-        map.getSource('isochrones').setData(fullIso);
-
-        // Now buildings.
         const emptyFC = {'type': 'FeatureCollection', 'features': []};
-        const isoFeatures = fullIso.features ? fullIso.features : [fullIso];
-        if (!isoFeatures) {
-          map.getSource('buildings').setData(fullIso);
-        } else {
-          const isoAndBuildings = {
-            type: 'FeatureCollection',
-            features: [buildings, ...isoFeatures],
-          };
-          const buildingsExcl = turf.difference(isoAndBuildings);
-          map.getSource('buildings').setData(buildingsExcl || emptyFC);
+        let isoOk = false;
+        try {
+          // TODO: bike + everything gives error: "this.rings is null".
+          const fullIso = iso.features.length > 1 ? turf.intersect(iso) : iso;
+          map.getSource('isochrones').setData(fullIso);
+          isoOk = true;
+
+          // Now buildings.
+          const isoFeatures = fullIso.features ? fullIso.features : [fullIso];
+          if (!isoFeatures) {
+            map.getSource('buildings').setData(fullIso);
+          } else {
+            const isoAndBuildings = {
+              type: 'FeatureCollection',
+              features: [buildings, ...isoFeatures],
+            };
+            const buildingsExcl = turf.difference(isoAndBuildings);
+            map.getSource('buildings').setData(buildingsExcl || emptyFC);
+          }
+        } catch (e) {
+          console.trace(e);
+          if (!isoOk) map.getSource('isochrones').setData(emptyFC);
+          map.getSource('buildings').setData(emptyFC);
+          $('#error').text(e);
+          $('#error').css('visibility', 'visible');
         }
       }
 
