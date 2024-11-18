@@ -82,7 +82,7 @@
 
       if (window.location.search) {
         const newFile = window.location.search.substring(1);
-        if (/^[a-zA-Z0-9/_-]+$/.test(newFile)) loadFile = newFile;
+        if (/^[a-zA-Z0-9/_-]+=?$/.test(newFile)) loadFile = newFile.replace('=', '');
       }
       map.on('load', () => {
         fetch('./' + loadFile + '.json')
