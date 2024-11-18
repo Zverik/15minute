@@ -81,8 +81,8 @@
       // No need to look below this line unless you're a developer.
 
       if (window.location.search) {
-        const newFile = window.location.search.substring(1);
-        if (/^[a-zA-Z0-9/_-]+=?$/.test(newFile)) loadFile = newFile.replace('=', '');
+        const fileMatches = window.location.search.match(/^\?([a-zA-Z0-9/_-]+)[=&]?/);
+        if (fileMatches) loadFile = fileMatches[1];
       }
       map.on('load', () => {
         fetch('./' + loadFile + '.json')
