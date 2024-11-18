@@ -59,29 +59,36 @@
       <div id="error"></div>
     </div>
     <script>
+      var loadFile = 'nomme15'; // file name without .json
+      var currentLayers = new Set([]);
+      var currentProfile = 'foot';
+
       const map = new maplibregl.Map({
-        style: 'https://tiles.openfreemap.org/styles/positron',
         // Change initial locaion [longitude, latitude] and zoom here.
         center: [24.73, 59.42],
         zoom: 11.5,
+        minZoom: 10,
+        maxZoom: 15,
+
+        style: 'https://tiles.openfreemap.org/styles/positron',
         container: 'map',
         attributionControl: { compact: false },
         hash: true,
-        minZoom: 10,
-        maxZoom: 15,
         dragRotate: false,
         pitchWithRotate: false,
       });
 
-      // Change file name here, can be remote if CORS works.
+      // No need to look below this line unless you're a developer.
+
+      if (window.location.search) {
+        const newFile = window.location.search.substring(1);
+        if (/^[a-zA-Z0-9/_-]+$/.test(newFile)) loadFile = newFile;
+      }
       map.on('load', () => {
-        fetch('./nomme15.json')
+        fetch('./' + loadFile + '.json')
           .then((response) => response.json())
           .then((json) => loadData(json));
       });
-
-      var currentLayers = new Set();
-      var currentProfile = null;
 
       var multipleLayers = false;
       var showIsochrones = false;
@@ -187,6 +194,9 @@
         // Build the settings panel.
         let settings = $('<div id="settings">');
         settings.append('<span class="s-title">Layers:</span>');
+        if (currentLayers.size > 0 && !(currentLayers.values().next().value in data.layers)) {
+          currentLayers = new Set();
+        }
         for (const layer in data.layers) {
           if (!currentLayers.size) currentLayers.add(layer);
           const l = $('<span class="s-button s-layer">' + layer + '</span>');
