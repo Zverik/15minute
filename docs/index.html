@@ -90,6 +90,10 @@
           .then((json) => loadData(json));
       });
 
+      map.addControl(new maplibregl.NavigationControl({
+        showCompass: false
+      }));
+
       var multipleLayers = false;
       var showIsochrones = false;
       var buildings = null;
