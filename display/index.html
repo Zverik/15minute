@@ -63,6 +63,8 @@
       var currentLayers = new Set([]);
       var currentProfile = 'foot';
 
+      var needZoomToBounds = !window.location.hash.match(/#\d/);
+
       const map = new maplibregl.Map({
         // Change initial locaion [longitude, latitude] and zoom here.
         center: [24.73, 59.42],
@@ -237,6 +239,12 @@
         // Update the layer and the profile.
         setLayer(currentLayers.values().next().value, true);
         setProfile(currentProfile);
+
+        if (needZoomToBounds) {
+          // Navigate to the region.
+          const areaBounds = turf.bbox(data.area);
+          map.fitBounds(areaBounds);
+        }
       }
 
       function updateData() {
