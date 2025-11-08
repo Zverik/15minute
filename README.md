@@ -58,7 +58,8 @@ Run the router using the appropriate jar file name:
 
     java -jar graphhopper-web-10.0.jar server graphhopper.yaml
 
-And then build the isochrones:
+When you see `Started Server@451882b2{STARTING}`, that means it's up and waiting
+for requests. Open another tab and then build the isochrones:
 
     ./15minute.py -a area.json -p poi.json -b buildings.json -O 15minute.json
 
@@ -69,7 +70,7 @@ buffered and simplified. Try those to see what the script outputs.
 
 ## Publishing the visualization
 
-It's simple. Get the json file you've built in the last step and put it next to the
+It's simple. Copy or move the json file you've built in the last step near the
 `display/index.html`. Then open the html file and replace `nomme15` with the
 name of your file (which should have the `.json` extension).
 
@@ -80,8 +81,8 @@ values of layers and profile:
     var currentProfile = 'bike';
 
 To check how it looks, run `python -m http.server` in the directory with the files,
-and open the URL it shows when started. To publish, just deploy the two files (html
-and json) somewhere, e.g. on GitHub Pages.
+and open the URL it shows (try http://127.0.0.1:8000/) when started.
+To publish, just deploy the two files (html and json) somewhere, e.g. on GitHub Pages.
 
 If you've got more files, you can use the single html file with a query parameter:
 e.g. `https://somewhere/?tallinn` to show data from `tallinn.json` in the same directory.
